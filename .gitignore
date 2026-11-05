@@ -1,0 +1,49 @@
+# Local secrets and environment configuration
+.env
+.env.*
+!.env.example
+mobile/.env
+services/ingestion/.env
+
+# Dependencies and local environments
+node_modules/
+**/node_modules/
+services/ingestion/.venv/
+.venv/
+
+# Python and test artifacts
+**/__pycache__/
+.pytest_cache/
+**/.pytest_cache/
+coverage/
+htmlcov/
+.coverage
+*.py[cod]
+
+# Expo, Metro, and build output
+.expo/
+**/.expo/
+dist/
+**/dist/
+web-build/
+.metro-health-check*
+*.tsbuildinfo
+
+# Logs and temporary files
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Native credentials and generated projects
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+/mobile/ios/
+/mobile/android/
+
+# macOS
+.DS_Store

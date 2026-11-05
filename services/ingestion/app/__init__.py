@@ -1,0 +1,1 @@
+"""Beach Mood ingestion service."""
