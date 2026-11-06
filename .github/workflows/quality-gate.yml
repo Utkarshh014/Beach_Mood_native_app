@@ -46,7 +46,8 @@ jobs:
       - name: Install Maestro
         run: curl -Ls https://get.maestro.mobile.dev | bash
       - name: Validate E2E flow files
-        run: ruby -e 'require "yaml"; Dir["e2e/*.yaml"].each { |file| YAML.load_file(file); puts "valid #{file}" }'
+        run: |
+          ruby -e 'require "yaml"; Dir["e2e/*.yaml"].each { |file| YAML.load_file(file); puts "valid #{file}" }'
       - name: Run Maestro E2E smoke tests
         if: ${{ env.MAESTRO_DEVICE_ID != '' }}
         run: maestro test e2e --device "$MAESTRO_DEVICE_ID"
