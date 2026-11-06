@@ -1,0 +1,16 @@
+appId: com.beachmood.app
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Locate Me"
+    timeout: 30000
+- assertVisible: "All Beaches"
+- tapOn: "Marina Beach"
+- assertVisible: "Marina Beach"
+- tapOn: "View Details"
+- assertVisible: "Oceanographic breakdown"
+- assertVisible: "Significant wave height (Hs)"
+- tapOn:
+    text: "Close beach details"
+- assertVisible: "Beach Mood map of Indian beaches"

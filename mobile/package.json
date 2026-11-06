@@ -1,0 +1,44 @@
+{
+  "name": "mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/netinfo": "12.0.1",
+    "@supabase/supabase-js": "^2.118.0",
+    "babel-preset-expo": "~58.0.0",
+    "expo": "~58.0.23",
+    "expo-location": "~58.0.20",
+    "expo-notifications": "~58.1.8",
+    "expo-status-bar": "~58.0.4",
+    "expo-task-manager": "~58.0.13",
+    "nativewind": "^4.2.7",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-gesture-handler": "~3.3.0",
+    "react-native-maps": "1.29.11",
+    "react-native-reanimated": "4.7.1",
+    "react-native-url-polyfill": "^4.0.0",
+    "react-native-worklets": "0.13.0",
+    "tailwindcss": "^3.4.19"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --runInBand",
+    "test:e2e": "maestro test e2e",
+    "deps:check-and-update": "bash scripts/update-dependencies.sh"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "^13.3.0",
+    "@types/jest": "^30.0.0",
+    "@types/react": "~19.3.0",
+    "jest-expo": "~58.0.14",
+    "react-test-renderer": "19.3.0",
+    "typescript": "~6.0.3"
+  },
+  "private": true
+}

@@ -1,0 +1,13 @@
+appId: com.beachmood.app
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "All Beaches"
+    timeout: 30000
+- tapOn: "All Beaches"
+- assertVisible: "Nearby < 50 km"
+- tapOn: "Locate Me"
+- extendedWaitUntil:
+    visible: "Nearby < 50 km"
+    timeout: 15000
