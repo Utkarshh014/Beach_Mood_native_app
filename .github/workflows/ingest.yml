@@ -34,6 +34,19 @@ jobs:
           cache-dependency-path: services/ingestion/requirements.txt
       - name: Install dependencies
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
+      - name: Validate ingestion configuration
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error title=Missing ingestion secrets::Configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY as repository secrets before running ingestion."
+            exit 1
+          fi
+          case "$SUPABASE_URL" in
+            https://*.supabase.co|https://*.supabase.co/) ;;
+            *)
+              echo "::error title=Invalid Supabase URL::SUPABASE_URL must be an HTTPS Supabase project URL."
+              exit 1
+              ;;
+          esac
       - name: Run unit tests
         run: PYTHONPATH=. pytest -q
       - name: Run ingestion
