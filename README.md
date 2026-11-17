@@ -230,7 +230,6 @@ decision support, not full compliance with the original INCOIS-based solution.
 
 ## Local implementation progress
 
-See [the change log and remaining steps](docs/IMPLEMENTATION_PROGRESS.md).
 The updated ingestion workflow serializes runs and writes a data-health summary;
 a successful process does not imply that every measurement is current or complete.
 An empty beach catalogue fails ingestion. Workflow edits take effect only after

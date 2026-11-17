@@ -17,6 +17,7 @@ const config: ExpoConfig = {
     },
   },
   plugins: [
+    "expo-status-bar",
     [
       "expo-location",
       {
