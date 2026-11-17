@@ -1,8 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
+import { AndroidImportance, AndroidNotificationVisibility } from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
 import { Platform } from "react-native";
+
+import { demonstrationBeach } from "./demonstration";
 
 import type { Beach } from "../types/domain";
 
@@ -35,10 +38,10 @@ export async function configureNotifications(): Promise<void> {
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("hazards", {
       name: "Beach hazard alerts",
-      importance: Notifications.AndroidImportance.MAX,
+      importance: AndroidImportance.MAX,
       sound: "default",
       vibrationPattern: [0, 250, 150, 250],
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
     });
   }
 }
@@ -123,7 +126,9 @@ export async function processGeofenceEntry(
   } catch {
     cooldowns = {};
   }
-  const lastNotified = cooldowns[beach.id] ?? 0;
+  const cooldownId = beach.activeAlerts.some((alert) => alert.source === "demo")
+    ? `demo:${beach.id}` : beach.id;
+  const lastNotified = cooldowns[cooldownId] ?? 0;
   if (now - lastNotified < NOTIFICATION_COOLDOWN_MS) return false;
 
   await configureNotifications();
@@ -133,14 +138,14 @@ export async function processGeofenceEntry(
   const alertTitle = beach.activeAlerts[0]?.title ?? "Hazard advisory";
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: `Hazard near ${beach.name}`,
-      body: `${alertTitle}. Recreational swimming strictly prohibited.`,
+      title: `${beach.activeAlerts[0]?.source === "demo" ? "DEMO — " : ""}Hazard near ${beach.name}`,
+      body: `${alertTitle}. Avoid swimming and water activities.`,
       sound: "default",
       data: { beachId: beach.id, status: beach.status },
     },
     trigger: null,
   });
-  cooldowns[beach.id] = now;
+  cooldowns[cooldownId] = now;
   await AsyncStorage.setItem(COOLDOWN_KEY, JSON.stringify(cooldowns));
   subscribers.forEach((callback) => callback(beach));
   return true;
@@ -150,7 +155,7 @@ export async function simulateGeofenceEntry(
   beach: Beach,
   now = Date.now(),
 ): Promise<boolean> {
-  return processGeofenceEntry(beach, now);
+  return processGeofenceEntry(demonstrationBeach(beach, now), now);
 }
 
 export function evaluateGeofenceEntries(

@@ -3,6 +3,9 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import MapView, { Region } from "react-native-maps";
 import { StatusBar } from "expo-status-bar";
 
+import { useAdvisoryClock } from "../hooks/useAdvisoryClock";
+import { demonstrationBeach } from "../services/demonstration";
+import { displayStatus } from "../services/suitability";
 import { HazardAlertModal } from "../components/HazardAlertModal";
 import { BeachCard } from "../components/beach/BeachCard";
 import { OfflineBanner } from "../components/common/OfflineBanner";
@@ -28,6 +31,7 @@ const INITIAL_REGION: Region = {
 };
 
 export function MapScreen() {
+  const now = useAdvisoryClock();
   const mapRef = useRef<MapView>(null);
   const { beaches, loading, error, isCached, cachedAt, refresh, offline } = useBeaches();
   const location = useUserLocation();
@@ -78,10 +82,10 @@ export function MapScreen() {
   }, [beaches, location]);
 
   const simulateHazardAlert = useCallback(async () => {
-    const target = beaches.find((beach) => beach.status === "Hazard");
+    const target = beaches[0];
     if (!target) return;
     await simulateGeofenceEntry(target);
-    setHazardBeach(target);
+    setHazardBeach(demonstrationBeach(target));
   }, [beaches]);
 
   useEffect(() => {
@@ -103,7 +107,8 @@ export function MapScreen() {
       >
         {visibleBeaches.map((beach) => (
           <BeachMarker
-            key={`${beach.id}-${beach.status ?? "unknown"}`}
+            key={`${beach.id}-${displayStatus(beach, now) ?? "unknown"}`}
+            now={now}
             beach={beach}
             selected={selectedBeach?.id === beach.id}
             onPress={handleMarkerPress}
@@ -189,7 +194,7 @@ export function MapScreen() {
             Beach Mood
           </Text>
           <Text style={{ color: "#627D98", marginTop: 2 }}>
-            Coastal conditions across India
+            Forecast guidance · automatic official warnings unavailable
           </Text>
         </View>
       </View>
@@ -274,11 +279,12 @@ export function MapScreen() {
       ) : null}
 
       <BeachCard
-        beach={selectedBeach}
+        beach={selectedBeach ? (visibleBeaches.find((b) => b.id === selectedBeach.id) ?? beaches.find((b) => b.id === selectedBeach.id) ?? null) : null}
+        now={now}
         onClose={handleCloseCard}
         onViewDetails={handleViewDetails}
       />
-      <BeachDetailModal beach={detailBeach} onClose={() => setDetailBeach(null)} />
+      <BeachDetailModal now={now} beach={detailBeach ? (visibleBeaches.find((b) => b.id === detailBeach.id) ?? beaches.find((b) => b.id === detailBeach.id) ?? null) : null} onClose={() => setDetailBeach(null)} />
       <HazardAlertModal
         beach={hazardBeach}
         onDismiss={() => setHazardBeach(null)}

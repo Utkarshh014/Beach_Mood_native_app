@@ -1,3 +1,4 @@
+import { isBeach } from "../lib/validation";
 import { supabase } from "../lib/supabase";
 import type {
   AlertSeverity,
@@ -85,7 +86,11 @@ function alerts(value: unknown): OceanAlert[] {
 }
 
 function mapRow(row: Record<string, unknown>): Beach {
-  return {
+  if (![row.id, row.name, row.slug, row.state].every((v) => typeof v === "string" && v.trim().length > 0) ||
+      typeof row.latitude !== "number" || typeof row.longitude !== "number") {
+    throw new Error("Malformed beach response");
+  }
+  const beach: Beach = {
     id: String(row.id),
     name: String(row.name),
     slug: String(row.slug),
@@ -114,6 +119,8 @@ function mapRow(row: Record<string, unknown>): Beach {
       typeof row.scoring_version === "string" ? row.scoring_version : null,
     activeAlerts: alerts(row.active_alerts),
   };
+  if (!isBeach(beach)) throw new Error("Malformed beach response");
+  return beach;
 }
 
 export async function getPublishedBeaches(): Promise<Beach[]> {

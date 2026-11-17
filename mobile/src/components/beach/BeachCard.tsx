@@ -8,10 +8,12 @@ import Animated, {
 
 import type { Beach } from "../../types/domain";
 import { StatusBadge } from "./StatusBadge";
+import { displayStatus, guidanceFor } from "../../services/suitability";
 import { staleAdvisoryLabel } from "../../services/offlineSync";
 
 interface BeachCardProps {
   beach: Beach | null;
+  now: number;
   onClose: () => void;
   onViewDetails: (beach: Beach) => void;
 }
@@ -20,17 +22,7 @@ function formatMetric(value: number | null, unit: string): string {
   return value === null ? "Not available" : `${value.toFixed(1)} ${unit}`;
 }
 
-function summaryFor(beach: Beach): string {
-  if (beach.activeAlerts.length > 0) {
-    return beach.activeAlerts[0].title;
-  }
-  if (beach.status === "Safe") return "No elevated hazard detected";
-  if (beach.status === "Caution") return "Use caution with current conditions";
-  if (beach.status === "Hazard") return "Hazard advisory";
-  return "Live condition data unavailable";
-}
-
-export function BeachCard({ beach, onClose, onViewDetails }: BeachCardProps) {
+export function BeachCard({ beach, onClose, onViewDetails, now }: BeachCardProps) {
   const translateY = useSharedValue(360);
 
   useEffect(() => {
@@ -86,9 +78,9 @@ export function BeachCard({ beach, onClose, onViewDetails }: BeachCardProps) {
             </Pressable>
           </View>
           <View style={{ marginTop: 12 }}>
-            <StatusBadge status={beach.status} />
-            <Text style={{ color: "#627D98", marginTop: 8 }}>{summaryFor(beach)}</Text>
-            {staleAdvisoryLabel(beach) ? (
+            <StatusBadge status={displayStatus(beach, now)} />
+            <Text style={{ color: "#627D98", marginTop: 8 }}>{guidanceFor(beach, now)}</Text>
+            {staleAdvisoryLabel(beach, now) ? (
               <Text style={{ color: "#9A3412", fontWeight: "700", marginTop: 6 }}>
                 Outdated advisory — proceed with extreme caution
               </Text>

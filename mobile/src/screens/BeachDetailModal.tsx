@@ -1,26 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 import { Linking, Modal, Pressable, ScrollView, Text, View } from "react-native";
 
+import { currentAlerts, displayStatus, explainReason, guidanceFor, INCOIS_UNAVAILABLE } from "../services/suitability";
 import { staleAdvisoryLabel } from "../services/offlineSync";
 import type { Beach } from "../types/domain";
 import { StatusBadge } from "../components/beach/StatusBadge";
 
 interface BeachDetailModalProps {
   beach: Beach | null;
+  now: number;
   onClose: () => void;
 }
 
-export function BeachDetailModal({ beach, onClose }: BeachDetailModalProps) {
+export function BeachDetailModal({ beach, onClose, now }: BeachDetailModalProps) {
+  const [linkError, setLinkError] = useState<string | null>(null);
   if (!beach) return null;
-  const staleLabel = staleAdvisoryLabel(beach);
-  const activityGuidance =
-    beach.status === "Safe"
-      ? "Safe for Swimming, Water Sports, and Shoreline Recreation"
-      : beach.status === "Caution"
-        ? "Shoreline Access Only; Swimming Discouraged; Watch for Rip Currents"
-        : beach.status === "Hazard"
-          ? "Water Access Prohibited; Active Hazard / Surge Alert"
-          : "Data unavailable. Do not treat this beach as verified safe.";
+  const staleLabel = staleAdvisoryLabel(beach, now);
+  const alerts = currentAlerts(beach, now);
+  const activityGuidance = guidanceFor(beach, now);
+  const openOfficial = async (url: string) => {
+    setLinkError(null);
+    try { await Linking.openURL(url); }
+    catch { setLinkError("Could not open the official website. Try again when connected."); }
+  };
 
   const openDirections = async () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${beach.latitude},${beach.longitude}`;
@@ -57,7 +59,7 @@ export function BeachDetailModal({ beach, onClose }: BeachDetailModalProps) {
         </View>
 
         <View style={{ marginTop: 20 }}>
-          <StatusBadge status={beach.status} />
+          <StatusBadge status={displayStatus(beach, now)} />
           <Text style={{ color: "#172B4D", fontWeight: "700", marginTop: 10 }}>{activityGuidance}</Text>
         </View>
 
@@ -67,6 +69,16 @@ export function BeachDetailModal({ beach, onClose }: BeachDetailModalProps) {
           </View>
         ) : null}
 
+        <Text style={sectionTitle}>Data coverage</Text>
+        <Text style={{ color: "#627D98" }}>{INCOIS_UNAVAILABLE}</Text>
+        <Metric label="Forecast valid at" value={formatTime(beach.validAt)} />
+        <Metric label="Downloaded at" value={formatTime(beach.fetchedAt)} />
+        <Metric label="Water quality" value="Unverified — no dated assessment is integrated" />
+        {beach.reasonCodes.map((code) => <Text key={code} style={{ color: "#627D98", marginTop: 5 }}>{explainReason(code)}</Text>)}
+        <Text style={sectionTitle}>Official information</Text>
+        <OfficialLink label="INCOIS location-specific forecasts" onPress={() => void openOfficial("https://incois.gov.in/oceanservices/LSF/index.html")} />
+        <OfficialLink label="INCOIS high-wave and swell-surge advisories" onPress={() => void openOfficial("https://incois.gov.in/site/services/hwa.jsp")} />
+        {linkError ? <Text accessibilityRole="alert" style={{ color: "#991B1B" }}>{linkError}</Text> : null}
         <Text style={sectionTitle}>Oceanographic breakdown</Text>
         <Metric label="Significant wave height (Hs)" value={formatMetric(beach.parameters.waveHeightM, "m")} />
         <Metric label="Wave period (Tp)" value={formatMetric(beach.parameters.peakPeriodS, "s")} />
@@ -75,13 +87,13 @@ export function BeachDetailModal({ beach, onClose }: BeachDetailModalProps) {
         <Metric label="Surface current velocity" value={formatMetric(beach.parameters.currentSpeedMs, "m/s")} />
 
         <Text style={sectionTitle}>Active alerts and warnings</Text>
-        {beach.activeAlerts.length > 0 ? beach.activeAlerts.map((alert) => (
+        {alerts.length > 0 ? alerts.map((alert) => (
           <View key={alert.id} style={{ borderLeftWidth: 4, borderLeftColor: "#ef4444", paddingLeft: 12, marginBottom: 12 }}>
             <Text style={{ color: "#991B1B", fontWeight: "800" }}>{alert.title}</Text>
             <Text style={{ color: "#627D98", marginTop: 3 }}>{alert.type} · {alert.source}</Text>
             {alert.description ? <Text style={{ color: "#627D98", marginTop: 3 }}>{alert.description}</Text> : null}
           </View>
-        )) : <Text style={{ color: "#627D98" }}>No active official alert is recorded.</Text>}
+        )) : <Text style={{ color: "#627D98" }}>No current alert is stored here. This does not confirm that official warnings are absent.</Text>}
 
         <Pressable
           accessibilityRole="button"
@@ -121,3 +133,13 @@ const sectionTitle = {
   marginTop: 24,
   marginBottom: 6,
 };
+
+function formatTime(value: string | null): string {
+  return value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString() : "Not available";
+}
+
+function OfficialLink({ label, onPress }: { label: string; onPress: () => void }) {
+  return <Pressable accessibilityRole="link" onPress={onPress} style={{ minHeight: 44, justifyContent: "center", paddingVertical: 8 }}>
+    <Text style={{ color: "#0B6E8A", textDecorationLine: "underline" }}>{label}</Text>
+  </Pressable>;
+}

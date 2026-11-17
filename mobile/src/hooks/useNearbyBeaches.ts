@@ -38,6 +38,8 @@ export function useNearbyBeaches(location: UserLocation | null) {
   }, [location]);
 
   useEffect(() => {
+    // The effect synchronizes an external location-dependent network query.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
   }, [refresh]);
 

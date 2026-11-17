@@ -6,6 +6,7 @@ import {
   NOTIFICATION_COOLDOWN_MS,
   evaluateGeofenceEntries,
   processGeofenceEntry,
+  simulateGeofenceEntry,
 } from "../src/services/geofenceService";
 import { beach } from "./fixtures";
 
@@ -60,4 +61,16 @@ test("schedules a hazard notification once and suppresses cooldown repeats", asy
 test("does not notify for a safe beach", async () => {
   await expect(processGeofenceEntry(beach(), Date.now())).resolves.toBe(false);
   expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+});
+
+
+test("demonstration notifications are labelled and do not suppress real hazards", async () => {
+  const now = Date.now();
+  const record = beach({ status: "Hazard" });
+  await expect(simulateGeofenceEntry(record, now)).resolves.toBe(true);
+  expect(Notifications.scheduleNotificationAsync).toHaveBeenLastCalledWith(expect.objectContaining({
+    content: expect.objectContaining({ title: expect.stringContaining("DEMO") }),
+  }));
+  await expect(processGeofenceEntry(record, now)).resolves.toBe(true);
+  expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
 });

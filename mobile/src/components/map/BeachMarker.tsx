@@ -2,6 +2,8 @@ import React, { memo, useCallback } from "react";
 import { Marker } from "react-native-maps";
 import { Text, View } from "react-native";
 
+import { displayStatus } from "../../services/suitability";
+
 import type { Beach, SuitabilityStatus } from "../../types/domain";
 
 const STATUS_COLORS: Record<SuitabilityStatus, string> = {
@@ -12,17 +14,20 @@ const STATUS_COLORS: Record<SuitabilityStatus, string> = {
 
 interface BeachMarkerProps {
   beach: Beach;
+  now: number;
   selected: boolean;
   onPress: (beach: Beach) => void;
 }
 
 function BeachMarkerComponent({
   beach,
+  now,
   selected,
   onPress,
 }: BeachMarkerProps) {
   const handlePress = useCallback(() => onPress(beach), [beach, onPress]);
-  const color = beach.status ? STATUS_COLORS[beach.status] : "#64748b";
+  const status = displayStatus(beach, now);
+  const color = status ? STATUS_COLORS[status] : "#64748b";
 
   return (
     <Marker
@@ -30,7 +35,7 @@ function BeachMarkerComponent({
       coordinate={{ latitude: beach.latitude, longitude: beach.longitude }}
       onPress={handlePress}
       tracksViewChanges={false}
-      accessibilityLabel={`${beach.name}, ${beach.status ?? "data unavailable"}`}
+      accessibilityLabel={`${beach.name}, ${status ?? "data unavailable"}`}
       accessibilityRole="button"
       accessibilityHint="Opens beach condition preview"
     >
@@ -51,11 +56,11 @@ function BeachMarkerComponent({
         }}
       >
         <Text style={{ color: "#ffffff", fontWeight: "800", fontSize: 12 }}>
-          {beach.status === "Safe"
+          {status === "Safe"
             ? "S"
-            : beach.status === "Caution"
+            : status === "Caution"
               ? "!"
-              : beach.status === "Hazard"
+              : status === "Hazard"
                 ? "H"
                 : "?"}
         </Text>

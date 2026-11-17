@@ -43,13 +43,13 @@ class IncoisSource:
             retries=self.retries,
         )
         record = self._record(payload)
+        valid_at = parse_timestamp(self._value(record, "valid_at", "validAt", "timestamp"))
+        if valid_at > fetched_at:
+            raise ValueError("INCOIS observation is not yet valid")
         observation = OceanObservation(
             beach_slug=beach.slug,
             source=self.name,
-            valid_at=parse_timestamp(
-                self._value(record, "valid_at", "validAt", "timestamp"),
-                fetched_at,
-            ),
+            valid_at=valid_at,
             fetched_at=fetched_at,
             wave_height_m=self._number(
                 record, "wave_height_m", "significant_wave_height", "hs"
@@ -68,6 +68,11 @@ class IncoisSource:
             ),
             raw_metadata={"provider": "INCOIS", "payload": payload},
         )
+        if all(value is None for value in (
+            observation.wave_height_m, observation.wind_speed_ms,
+            observation.current_speed_ms,
+        )):
+            raise ValueError("INCOIS observation contains no usable core measurements")
         return SourceResult(
             observation=observation,
             advisories=self._advisories(payload, beach.slug),

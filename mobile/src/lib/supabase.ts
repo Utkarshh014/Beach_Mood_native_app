@@ -49,7 +49,7 @@ export interface Database {
     Functions: {
       get_nearby_beaches: {
         Args: { lat: number; lon: number; radius_meters: number };
-        Returns: Array<{
+        Returns: {
           id: string;
           name: string;
           slug: string;
@@ -70,7 +70,7 @@ export interface Database {
           reason_codes: string[] | null;
           data_quality: "good" | "partial" | "stale" | "unknown" | null;
           active_alerts: unknown;
-        }>;
+        }[];
       };
     };
   };

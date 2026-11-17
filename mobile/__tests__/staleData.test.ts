@@ -26,14 +26,14 @@ const beach: Beach = {
   activeAlerts: [],
 };
 
-test("classifies conditions older than 24 hours as stale", () => {
-  const now = Date.parse("2026-11-03T11:00:01.000Z");
+test("classifies conditions older than six hours as stale", () => {
+  const now = Date.parse("2026-11-02T16:00:01.000Z");
   expect(isBeachStale(beach, now)).toBe(true);
   expect(staleAdvisoryLabel(beach, now)).toContain("Outdated Advisory");
 });
 
 test("does not classify a recent condition as stale", () => {
-  const now = Date.parse("2026-11-03T09:00:00.000Z");
+  const now = Date.parse("2026-11-02T15:00:00.000Z");
   expect(isBeachStale(beach, now)).toBe(false);
   expect(staleAdvisoryLabel(beach, now)).toBeNull();
 });

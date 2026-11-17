@@ -39,7 +39,7 @@ export function HazardAlertModal({ beach, onDismiss }: HazardAlertModalProps) {
           }}
         >
           <Text style={{ color: "#991B1B", fontSize: 13, fontWeight: "800" }}>
-            HAZARD ADVISORY
+            {alert?.source === "demo" ? "DEMO — HAZARD ADVISORY" : "HAZARD ADVISORY"}
           </Text>
           <Text style={{ color: "#172B4D", fontSize: 24, fontWeight: "800", marginTop: 8 }}>
             Near {beach.name}
@@ -48,7 +48,7 @@ export function HazardAlertModal({ beach, onDismiss }: HazardAlertModalProps) {
             {detail}
           </Text>
           <Text style={{ color: "#991B1B", fontSize: 17, fontWeight: "800", marginTop: 18 }}>
-            Recreational swimming strictly prohibited.
+            Avoid swimming and water activities.
           </Text>
           <Text style={{ color: "#627D98", marginTop: 10 }}>
             Follow local authorities and lifeguard instructions. This advisory is

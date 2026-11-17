@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { isBeachSnapshot } from "./validation";
+
 import type { Beach } from "../types/domain";
 
 export const CACHE_KEY = "beach-mood:published-beaches:v2";
@@ -12,10 +14,9 @@ export interface BeachCache {
 }
 
 export async function readBeachCache(): Promise<BeachCache | null> {
-  const raw = await AsyncStorage.getItem(CACHE_KEY);
-  if (!raw) return null;
-
   try {
+    const raw = await AsyncStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     if (
       typeof parsed !== "object" ||
@@ -25,25 +26,32 @@ export async function readBeachCache(): Promise<BeachCache | null> {
       !("beaches" in parsed) ||
       parsed.schemaVersion !== CACHE_SCHEMA_VERSION ||
       typeof parsed.cachedAt !== "string" ||
-      !Array.isArray(parsed.beaches)
+      !isBeachSnapshot(parsed.beaches) ||
+      !Number.isFinite(Date.parse(parsed.cachedAt))
     ) {
       return null;
     }
     return {
       schemaVersion: CACHE_SCHEMA_VERSION,
       cachedAt: parsed.cachedAt,
-      beaches: parsed.beaches as Beach[],
+      beaches: parsed.beaches,
     };
   } catch {
     return null;
   }
 }
 
-export async function writeBeachCache(beaches: Beach[]): Promise<void> {
+export async function writeBeachCache(beaches: Beach[]): Promise<boolean> {
+  if (!isBeachSnapshot(beaches)) return false;
   const value: BeachCache = {
     schemaVersion: CACHE_SCHEMA_VERSION,
     cachedAt: new Date().toISOString(),
     beaches,
   };
-  await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(value));
+  try {
+    await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
 }

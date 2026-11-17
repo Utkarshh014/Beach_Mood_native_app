@@ -6,6 +6,6 @@ appId: com.beachmood.app
     visible: "All Beaches"
     timeout: 30000
 - tapOn: "Simulate Hazard Alert"
-- assertVisible: "HAZARD ADVISORY"
-- assertVisible: "Recreational swimming strictly prohibited."
+- assertVisible: "DEMO — HAZARD ADVISORY"
+- assertVisible: "Avoid swimming and water activities."
 - tapOn: "Dismiss"

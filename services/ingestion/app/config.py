@@ -13,6 +13,7 @@ class Settings:
     open_meteo_base_url: str
     http_timeout_seconds: float
     http_retries: int
+    open_meteo_weather_url: str = "https://api.open-meteo.com/v1/forecast"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -41,4 +42,7 @@ class Settings:
             ).rstrip("/"),
             http_timeout_seconds=timeout,
             http_retries=retries,
+            open_meteo_weather_url=os.getenv(
+                "OPEN_METEO_WEATHER_URL", "https://api.open-meteo.com/v1/forecast"
+            ).rstrip("/"),
         )

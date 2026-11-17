@@ -24,14 +24,18 @@ class MarineSource(Protocol):
         ...
 
 
-def parse_timestamp(value: Any, fallback: datetime) -> datetime:
+def parse_timestamp(value: Any, fallback: datetime | None = None) -> datetime:
     if isinstance(value, datetime):
         parsed = value
     elif isinstance(value, str):
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     else:
+        if fallback is None:
+            raise ValueError("Source timestamp is required")
         parsed = fallback
     if parsed.tzinfo is None:
+        if fallback is None:
+            raise ValueError("Source timestamp must include timezone")
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
 

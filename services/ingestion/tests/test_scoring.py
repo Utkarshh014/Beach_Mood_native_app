@@ -110,3 +110,10 @@ def test_stale_data_is_not_safe():
     )
     assert result.status == "Caution"
     assert result.data_quality == "stale"
+
+
+def test_missing_peak_period_cannot_be_good_or_safe():
+    result = score_observation(observation(peak_period_s=None), now=NOW)
+    assert result.status == "Caution"
+    assert result.data_quality == "partial"
+    assert "MISSING_PEAK_PERIOD" in result.reason_codes

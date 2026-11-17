@@ -9,7 +9,7 @@ from app.models import (
     SuitabilityStatus,
 )
 
-SCORING_VERSION = "phase2-rsi-2026-11-03"
+SCORING_VERSION = "rsi-2026-11-17"
 STALE_AFTER_HOURS = 6
 WIND_CAUTION_KMH = 25.0
 WIND_HAZARD_KMH = 40.0
@@ -105,6 +105,7 @@ def score_observation(
             observation.wave_height_m,
             observation.wind_speed_ms,
             observation.current_speed_ms,
+            observation.peak_period_s,
         )
     )
     if has_missing_core:

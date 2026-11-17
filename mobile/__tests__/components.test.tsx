@@ -9,7 +9,7 @@ test("BeachCard exposes status, metrics, and accessible actions", () => {
   const record = beach({ status: "Caution" });
   const onDetails = jest.fn();
   render(
-    <BeachCard beach={record} onClose={jest.fn()} onViewDetails={onDetails} />,
+    <BeachCard now={Date.now()} beach={record} onClose={jest.fn()} onViewDetails={onDetails} />,
   );
 
   expect(screen.getByText("Marina Beach")).toBeTruthy();
@@ -24,11 +24,11 @@ test("BeachCard exposes status, metrics, and accessible actions", () => {
 test("BeachDetailModal renders hazard guidance and accessible dismissal", () => {
   const onClose = jest.fn();
   render(
-    <BeachDetailModal beach={beach({ status: "Hazard" })} onClose={onClose} />,
+    <BeachDetailModal now={Date.now()} beach={beach({ status: "Hazard" })} onClose={onClose} />,
   );
 
   expect(
-    screen.getByText("Water Access Prohibited; Active Hazard / Surge Alert"),
+    screen.getByText("Avoid water activities. Follow official advisories and lifeguard instructions."),
   ).toBeTruthy();
   expect(screen.getByText("Significant wave height (Hs)")).toBeTruthy();
   fireEvent.press(
@@ -45,10 +45,19 @@ test("HazardAlertModal can be dismissed and announces the emergency", () => {
 
   expect(screen.getByText("HAZARD ADVISORY")).toBeTruthy();
   expect(
-    screen.getByText("Recreational swimming strictly prohibited."),
+    screen.getByText("Avoid swimming and water activities."),
   ).toBeTruthy();
   fireEvent.press(
     screen.getByRole("button", { name: "Dismiss hazard alert" }),
   );
   expect(onDismiss).toHaveBeenCalled();
+});
+
+test("old measurements show unavailable instead of a positive recommendation", () => {
+  const now = Date.parse("2026-11-17T12:00:00Z");
+  render(<BeachDetailModal now={now} beach={beach({ validAt: "2026-11-16T00:00:00Z" })} onClose={jest.fn()} />);
+  expect(screen.getByLabelText("Suitability: Data unavailable")).toBeTruthy();
+  expect(screen.getByText(/Automatic INCOIS warnings unavailable/)).toBeTruthy();
+  expect(screen.queryByText(/Safe for Swimming/)).toBeNull();
+  expect(screen.getByRole("link", { name: "INCOIS high-wave and swell-surge advisories" })).toBeTruthy();
 });

@@ -59,9 +59,9 @@ test("does not cache an empty network response", async () => {
   expect(await AsyncStorage.getItem("beach-mood:published-beaches:v2")).toBeNull();
 });
 
-test("classifies timestamps beyond the 24-hour freshness window", () => {
+test("classifies timestamps beyond the six-hour freshness window", () => {
   const now = Date.parse("2026-11-05T12:00:00.000Z");
-  expect(isStaleTimestamp("2026-11-04T11:59:59.000Z", now)).toBe(true);
-  expect(isStaleTimestamp("2026-11-04T12:00:01.000Z", now)).toBe(false);
+  expect(isStaleTimestamp("2026-11-05T05:59:59.000Z", now)).toBe(true);
+  expect(isStaleTimestamp("2026-11-05T06:00:01.000Z", now)).toBe(false);
   expect(staleAdvisoryLabel(beach, now)).toContain("Outdated Advisory");
 });

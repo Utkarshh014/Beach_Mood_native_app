@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: beach-mood-ingestion
+  cancel-in-progress: false
+
 jobs:
   ingest:
     runs-on: ubuntu-latest
@@ -21,13 +25,14 @@ jobs:
       INCOIS_API_URL: ${{ secrets.INCOIS_API_URL }}
       INCOIS_API_TOKEN: ${{ secrets.INCOIS_API_TOKEN }}
       OPEN_METEO_BASE_URL: https://marine-api.open-meteo.com/v1/marine
+      OPEN_METEO_WEATHER_URL: https://api.open-meteo.com/v1/forecast
       HTTP_TIMEOUT_SECONDS: "20"
       HTTP_RETRIES: "3"
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
