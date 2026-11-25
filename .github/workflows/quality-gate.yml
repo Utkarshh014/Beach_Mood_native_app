@@ -12,6 +12,7 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: services/ingestion
@@ -27,6 +28,7 @@ jobs:
 
   mobile:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       MAESTRO_DEVICE_ID: ${{ secrets.MAESTRO_DEVICE_ID }}
     defaults:
@@ -41,13 +43,18 @@ jobs:
           cache-dependency-path: mobile/package-lock.json
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run lint
       - run: npx expo-doctor
       - run: npm test -- --ci
       - name: Install Maestro
-        run: curl -Ls https://get.maestro.mobile.dev | bash
+        if: ${{ env.MAESTRO_DEVICE_ID != '' }}
+        run: |
+          set -euo pipefail
+          curl -fLsS https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
       - name: Validate E2E flow files
         run: |
-          ruby -e 'require "yaml"; Dir["e2e/*.yaml"].each { |file| YAML.load_file(file); puts "valid #{file}" }'
+          ruby -e 'require "yaml"; Dir["e2e/*.yaml"].each { |file| YAML.load_stream(File.read(file)); puts "valid #{file}" }'
       - name: Run Maestro E2E smoke tests
         if: ${{ env.MAESTRO_DEVICE_ID != '' }}
-        run: maestro test e2e --device "$MAESTRO_DEVICE_ID"
+        run: maestro --device "$MAESTRO_DEVICE_ID" test e2e

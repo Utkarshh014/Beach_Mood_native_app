@@ -33,7 +33,10 @@ geofence notification delivery is covered by Jest through
 `simulateGeofenceEntry`; background callbacks require a development build and
 cannot be made reliable in Expo Go.
 
-The quality-gate workflow validates every flow on all pull requests. To execute
-the Maestro smoke flows in CI, provide a runner/device identifier through the
-`MAESTRO_DEVICE_ID` repository secret; GitHub-hosted runners do not provide a
-mobile device by default.
+The quality-gate workflow validates the YAML syntax of every document in each
+flow on all pull requests. This does not execute the flows. Maestro is installed
+and smoke tests are attempted only when `MAESTRO_DEVICE_ID` is configured.
+A device identifier alone is insufficient: that runner must also have a
+reachable device or emulator with the E2E-enabled app installed. The default
+GitHub-hosted runner does not set this up. Run the flows locally with the
+prerequisites above for the free college-project setup.

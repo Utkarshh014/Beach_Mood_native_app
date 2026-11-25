@@ -28,6 +28,10 @@ official warnings.
 - [Engineering Guidelines](docs/ENGINEERING_GUIDELINES.md)
 - [Project Roadmap](docs/ROADMAP.md)
 
+These documents describe the target design and planned work. The current
+implementation and its remaining gaps are summarized in this README's
+limitations section; planned INCOIS and water-quality features are not live.
+
 ## Supabase setup
 
 1. Create a free Supabase project.
@@ -51,8 +55,7 @@ service-role key in the mobile app or a committed `.env` file.
 The first deployment intentionally leaves `INCOIS_API_URL` and
 `INCOIS_API_TOKEN` empty. The free-data approach uses Open-Meteo Marine and
 Weather forecasts for this noncommercial college project. It does not require
-contacting a provider for API access. Local ingestion corrections described
-below take effect on GitHub only after they are published.
+contacting a provider for API access.
 
 INCOIS remains an optional future integration once an actual endpoint, schema,
 coverage, and permitted reuse are verified. Public pages are available for
@@ -98,6 +101,8 @@ Add these repository secrets:
 
 The workflow at `.github/workflows/ingest.yml` runs tests and ingestion every
 three hours, and can also be started with `workflow_dispatch`.
+Runs are serialized and write a data-health summary. An empty beach catalogue
+fails ingestion; process success alone does not imply complete or current data.
 
 ## Run the Expo app
 
@@ -105,7 +110,8 @@ three hours, and can also be started with `workflow_dispatch`.
 cd mobile
 cp .env.example .env
 # Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in .env.
-npm install
+# Also set GOOGLE_MAPS_ANDROID_API_KEY before building an Android app.
+npm ci
 npm run typecheck
 npm test
 npx expo start
@@ -118,6 +124,48 @@ Expo Go and simulators cannot fully represent production background behavior:
 npx expo run:ios
 npx expo run:android
 ```
+
+### Shareable Android APK
+
+`mobile/eas.json` provides a `preview` profile for a signed, standalone APK
+with internal distribution and E2E simulation controls disabled. It uses Expo's
+`preview` environment and remote Android version-code increments.
+
+A native-only Google Maps config plugin reads `GOOGLE_MAPS_ANDROID_API_KEY`
+from the environment. The value is not an `EXPO_PUBLIC_` variable or a serialized
+plugin option in Expo public config; it is embedded in the Android native
+manifest, where Maps SDK needs it. Android application/API restrictions remain
+necessary because native APK values are extractable. Keep the actual value in
+the ignored `mobile/.env` for local configuration. Android cloud builds also
+require this variable, plus
+`EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`, in the Expo
+project's `preview` environment. Use sensitive visibility for the Maps key so
+it is available to dynamic config resolution without putting it in source.
+Never add the ingestion service-role key to the mobile build environment. The
+app config rejects service-role credentials if present. Root `.easignore` limits
+uploads to the mobile client and excludes `.env`, local signing credentials,
+and backend sources. Git also ignores `.env`, `credentials.json`, and local
+keystore files.
+
+After signing into Expo and linking the project, build from `mobile`:
+
+```bash
+npx eas-cli@latest login
+npx eas-cli@latest build --platform android --profile preview
+```
+
+Before distributing the APK, restrict the Maps key to Maps SDK for Android and
+the Android application `com.beachmood.app` with the actual signing certificate
+SHA-1. Retain the same signing keystore for app updates. Test the installed APK
+on a physical Android phone; Expo Go does not verify standalone key/signing setup.
+
+Android release builds retain the Room database and WorkManager input-merger
+constructors through `expo-build-properties` in `mobile/app.config.ts`.
+SDK 58 enables R8 optimization by default; the WorkManager 2.9.1 dependency
+brought in by Maps otherwise loses reflective constructors and can crash in
+`androidx.startup.InitializationProvider` before JavaScript starts. These keep
+rules preserve the required constructors while leaving release optimization
+enabled. A native rebuild is required after changing these rules.
 
 The first native build requires Xcode/Android tooling or an equivalent EAS
 development build environment. Location is requested only after the user taps
@@ -154,8 +202,9 @@ A nearby query with no results offers a return to the national catalogue.
 5. For deterministic unit-level verification, call
    `simulateGeofenceEntry(beach, now)` from
    `mobile/src/services/geofenceService.ts`. The helper exercises hazard
-   filtering and the six-hour persistent cooldown without requiring GPS. Simulation notifications
-are labelled DEMO and do not suppress subsequent real hazard notifications.
+   filtering and the six-hour persistent cooldown without requiring GPS.
+   Simulation notifications are labelled DEMO and do not suppress subsequent
+   real hazard notifications.
 6. Verify that a second entry for the same beach within six hours does not
    schedule another notification.
 
@@ -168,8 +217,9 @@ battery policy, and platform region limits. It is not guaranteed.
 cd services/ingestion
 PYTHONPATH=. pytest -q
 
-cd mobile
+cd ../../mobile
 npm run typecheck
+npm run lint
 npm test
 npx expo-doctor
 ```
@@ -178,6 +228,14 @@ Maestro end-to-end flows and local emulator/device setup are documented in
 [`mobile/e2e/README.md`](mobile/e2e/README.md). The deterministic hazard flow
 uses `EXPO_PUBLIC_E2E=true` and the in-app simulation control; production
 builds do not expose that control.
+
+Run `npm audit --omit=dev` from `mobile` to review dependency advisories.
+The Expo fingerprint tooling currently uses a `minimatch` version affected by
+[GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
+The affected build/test dependency ranges do not yet accept the patched major
+version. Do not run `npm audit fix --force` to clear this: npm proposes an
+incompatible Expo SDK downgrade. Keep dependencies aligned with Expo Doctor
+and review an upstream-compatible fix when available.
 
 Before release, review the INCOIS terms and source mapping, have RSI thresholds
 reviewed by qualified coastal-safety experts, test RLS with anon credentials,
@@ -221,16 +279,9 @@ API or permission for automated reuse. Any future connector must verify both.
 | Geofence delivery is not guaranteed. | Permissions, OS lifecycle, battery settings, and region limits affect delivery. Physical-device verification is still required; simulated entries only test part of the path. |
 | Concurrent database writes still have gaps. | Mobile snapshots now reject empty/malformed data and retain good cache. Backend condition writes still use check-then-insert without a matching uniqueness constraint, and multi-table updates are not atomic. Database fixes remain pending. |
 | Coverage is a demonstration catalogue. | The development seed contains ten illustrative beach records rather than a verified nationwide beach inventory. Seed measurements must not be presented as live observations. |
-| Free infrastructure can become unavailable. | API quotas, GitHub allowances, and Supabase Free pausing/limits apply. Local workflow edits do not improve the deployed service until published; this project does not promise continuous monitoring. |
+| Free infrastructure can become unavailable. | API quotas, GitHub allowances, and Supabase Free pausing/limits apply; this project does not promise continuous monitoring. |
 
 The E2E-only simulation control now creates explicitly labelled in-memory DEMO
 warnings and notifications, with a separate cooldown from real hazards. It does
 not import warnings into the live database or establish live INCOIS integration. This project currently demonstrates forecast-based
 decision support, not full compliance with the original INCOIS-based solution.
-
-## Local implementation progress
-
-The updated ingestion workflow serializes runs and writes a data-health summary;
-a successful process does not imply that every measurement is current or complete.
-An empty beach catalogue fails ingestion. Workflow edits take effect only after
-publication to GitHub; local edits do not change the currently deployed service.

@@ -26,6 +26,9 @@ htmlcov/
 dist/
 **/dist/
 web-build/
+*.apk
+*.aab
+graphify-out/
 .metro-health-check*
 *.tsbuildinfo
 
@@ -37,6 +40,10 @@ yarn-error.*
 
 # Native credentials and generated projects
 *.jks
+*.keystore
+*.pfx
+credentials.json
+/mobile/credentials/
 *.p8
 *.p12
 *.key
@@ -47,3 +54,6 @@ yarn-error.*
 
 # macOS
 .DS_Store
+
+# Local editor settings
+.vscode/

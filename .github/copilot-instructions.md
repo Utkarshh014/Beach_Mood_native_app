@@ -17,7 +17,7 @@ span one or more of these boundaries:
   checks. The schema uses PostGIS geography, a public latest-status view, a
   nearby-beaches RPC, and RLS/public read-only access.
 - `.github/workflows/quality-gate.yml` runs backend tests and mobile
-  typecheck, Expo Doctor, Jest, and optional Maestro smoke tests.
+  typecheck, lint, Expo Doctor, Jest, and optional Maestro smoke tests.
   `.github/workflows/ingest.yml` runs backend tests before ingestion on a
   three-hour schedule or manual dispatch.
 
@@ -41,10 +41,11 @@ PYTHONPATH=. pytest tests/test_scoring.py -q
 PYTHONPATH=. pytest -q -k "fallback"
 PYTHONPATH=. python -m app.main
 
-# Expo mobile app
-cd mobile
+# Expo mobile app (from services/ingestion above)
+cd ../../mobile
 npm ci
 npm run typecheck
+npm run lint
 npm test
 npm test -- __tests__/geofenceService.test.ts
 npm test -- --testNamePattern="offline"
@@ -55,12 +56,12 @@ npx expo run:android
 npm run test:e2e
 ```
 
-The mobile package currently has no dedicated lint script or lint
-configuration. `mobile/AGENTS.md` treats `npx expo lint` as the expected Expo
-lint check when available; run it before completion if the local Expo setup
-supports it. CI's required mobile checks are typecheck, Expo Doctor, Jest, and
-Maestro flow-file validation, with device E2E conditional on
-`MAESTRO_DEVICE_ID`.
+The mobile package has an Expo ESLint configuration and an `npm run lint`
+script. Run lint and typecheck before completion. CI's required mobile checks
+are typecheck, lint, Expo Doctor, Jest, and YAML syntax validation of every
+document in the Maestro flow files. Device E2E is conditional on
+`MAESTRO_DEVICE_ID` and also needs an actual reachable device/emulator with
+the test build installed; a secret identifier alone does not provide one.
 
 For Supabase changes, apply `supabase/migrations/001_initial_schema.sql` in a
 non-production project, seed with `supabase/seed.sql` when needed, and run
@@ -88,8 +89,11 @@ the PostGIS query plan using `EXPLAIN (ANALYZE, BUFFERS)`.
   `ST_DWithin` predicate usable.
 - Mobile API/cache code maps nullable and unknown values explicitly. Empty or
   malformed network responses must not overwrite a valid cache. Offline,
-  missing, and stale data are distinct UI states; data older than 24 hours is
-  labeled as an outdated advisory and is never presented as safe.
+  missing, and stale data are distinct UI states. Forecast freshness uses
+  `valid_at` and a six-hour window, not download time. Active recorded warnings
+  can remain visible after a forecast expires. Favourable model data alone
+  does not establish overall suitability while water quality and automatic
+  official-warning coverage remain unverified.
 - Keep network access in service modules and stateful orchestration in hooks.
   Use the domain types in `mobile/src/types/domain.ts`, keep units in names
   such as `waveHeightM` and `windSpeedMs`, and avoid `any`.
